@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>论文降重降AI率工具 · PaperPure</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="bg-glow"></div>
+  <div class="notice-bar" id="notice-bar" style="display:none">
+    <span>📢</span><span id="notice-text"></span>
+    <button onclick="this.parentElement.style.display='none'" class="notice-close">✕</button>
+  </div>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo"><span class="logo-icon">✦</span><span class="logo-text">PaperPure</span></div>
+      <nav class="header-nav">
+        <a href="#how" class="nav-link">使用方法</a>
+        <a href="./admin/admin.html" class="nav-link nav-admin">管理后台</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1 class="hero-title">论文降重 & 降AI率</h1>
+    <p class="hero-sub">全文AI特征检测 · 智能深度改写 · 保留原意自然流畅</p>
+  </section>
+
+  <main class="tool-wrap">
+    <!-- 01 输入 -->
+    <div class="tool-card">
+      <div class="card-header">
+        <span class="step-badge">01</span>
+        <h2>粘贴论文内容</h2>
+        <span class="limit-tip">最多 5,000 字</span>
+      </div>
+      <textarea id="input-text" class="paper-textarea"
+        placeholder="请在此处粘贴您的论文段落内容…&#10;&#10;建议每次处理一个段落或章节，效果更好。最多 5,000 字。"
+        oninput="updateWordCount()"></textarea>
+      <div class="textarea-footer">
+        <span id="word-count" class="word-count">0 / 5000 字</span>
+        <button class="clear-btn" onclick="clearInput()" id="clear-btn" style="display:none">✕ 清空</button>
+      </div>
+    </div>
+
+    <!-- 02 卡密 -->
+    <div class="tool-card">
+      <div class="card-header">
+        <span class="step-badge">02</span>
+        <h2>输入卡密</h2>
+        <span class="limit-tip" style="color:var(--green)">检测功能免费</span>
+      </div>
+      <div class="cardkey-row">
+        <input type="text" id="card-input" class="cardkey-input" placeholder="输入卡密，例如：VIP888"
+          oninput="this.value=this.value.toUpperCase()"
+          onkeydown="if(event.key==='Enter')verifyCard()" />
+        <button class="verify-btn" onclick="verifyCard()" id="verify-btn">验证</button>
+      </div>
+      <div id="card-status" style="display:none" class="card-status"></div>
+    </div>
+
+    <!-- 03 功能 -->
+    <div class="tool-card action-card">
+      <div class="card-header">
+        <span class="step-badge">03</span>
+        <h2>选择功能</h2>
+      </div>
+      <div class="func-tabs">
+        <button class="func-tab active" id="ftab-rewrite" onclick="switchTab('rewrite')">
+          <span class="ftab-icon">✦</span>
+          <div><div class="ftab-title">降重 & 降AI率</div><div class="ftab-desc">深度改写 · 消耗1次卡密次数</div></div>
+        </button>
+        <button class="func-tab" id="ftab-detect" onclick="switchTab('detect')">
+          <span class="ftab-icon">🔍</span>
+          <div><div class="ftab-title">全文AI特征检测</div><div class="ftab-desc">标出高风险句子 · 免费</div></div>
+        </button>
+      </div>
+
+      <div class="func-panel active" id="panel-rewrite">
+        <p class="panel-desc">AI深度改写，改变句式结构、替换表达方式、加入自然口语，同时降低AI率与查重率。<br>
+          <span class="cost-tip">⚡ 消耗 1 次卡密次数 · 最多 5,000 字</span></p>
+        <button class="main-btn" id="rewrite-btn" onclick="startRewrite()"><span>✦</span> 一键降重降AI率</button>
+        <div class="progress-wrap" id="rw-progress" style="display:none">
+          <div class="progress-bar"><div class="progress-fill" id="rw-fill"></div></div>
+          <div class="progress-text" id="rw-text">正在连接AI…</div>
+        </div>
+      </div>
+
+      <div class="func-panel" id="panel-detect">
+        <p class="panel-desc">分析全文AI写作特征，精准标出哪些句子"AI味"最重，结合查重逻辑给出针对性建议。<br>
+          <span class="free-tip">✓ 免费使用，不消耗次数</span></p>
+        <button class="main-btn detect-btn" id="detect-btn" onclick="startDetect()"><span>🔍</span> 一键全文检测</button>
+        <div class="progress-wrap" id="dt-progress" style="display:none">
+          <div class="progress-bar"><div class="progress-fill" id="dt-fill"></div></div>
+          <div class="progress-text" id="dt-text">AI正在分析文本…</div>
+        </div>
+      </div>
+
+      <div class="error-box" id="error-box" style="display:none">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="error-msg"></span>
+        <button onclick="this.parentElement.style.display='none'" style="background:none;border:none;color:var(--text3);cursor:pointer;margin-left:auto;font-size:16px">✕</button>
+      </div>
+    </div>
+
+    <!-- 改写结果 -->
+    <div class="result-card" id="result-rewrite" style="display:none">
+      <div class="result-header">
+        <h2>✦ 改写结果</h2>
+        <div class="result-actions">
+          <span id="compare-badge" class="compare-badge"></span>
+          <button class="act-btn" onclick="copyRewrite()">📋 复制</button>
+          <button class="act-btn primary-btn" onclick="downloadTxt()">⬇ 下载</button>
+        </div>
+      </div>
+      <div class="result-grid">
+        <div class="result-col">
+          <div class="col-label"><span class="dot dot-orig"></span>原文</div>
+          <div class="result-box" id="orig-box"></div>
+        </div>
+        <div class="result-col">
+          <div class="col-label"><span class="dot dot-new"></span>改写后 <span class="col-badge">可直接编辑</span></div>
+          <textarea class="result-box result-editable" id="new-box"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- 检测结果 -->
+    <div class="result-card" id="result-detect" style="display:none">
+      <div class="result-header">
+        <h2>🔍 AI特征检测报告</h2>
+        <div class="result-actions">
+          <button class="act-btn" onclick="document.getElementById('result-detect').style.display='none'">✕ 关闭</button>
+        </div>
+      </div>
+      <div id="detect-body"></div>
+    </div>
+  </main>
+
+  <section class="how-section" id="how">
+    <h2 class="section-title">使用方法</h2>
+    <div class="steps-grid">
+      <div class="step-item"><div class="step-num">1</div><h3>粘贴文本</h3><p>将论文段落粘贴到输入框，每次建议处理一个章节，不超过 5,000 字</p></div>
+      <div class="step-arrow">→</div>
+      <div class="step-item"><div class="step-num">2</div><h3>先检测</h3><p>点击「全文检测」，查看哪些句子AI特征最明显，了解改写重点</p></div>
+      <div class="step-arrow">→</div>
+      <div class="step-item"><div class="step-num">3</div><h3>输入卡密</h3><p>验证卡密后，点击「降重降AI率」，AI自动深度改写全文</p></div>
+      <div class="step-arrow">→</div>
+      <div class="step-item"><div class="step-num">4</div><h3>编辑下载</h3><p>改写结果可直接编辑微调，复制或下载使用</p></div>
+    </div>
+  </section>
+
+  <footer class="site-footer"><p>© 2024 PaperPure · 仅供学习参考使用</p></footer>
+  <div class="toast" id="toast"></div>
+  <script src="script.js"></script>
+</body>
+</html>

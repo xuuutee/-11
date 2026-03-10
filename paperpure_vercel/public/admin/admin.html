@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>管理后台 · PaperPure</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    :root{
+      --bg:#0a0c10;--surface:#141820;--surface2:#1a2030;
+      --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
+      --accent:#e8d5a0;--accent2:#c9a96e;
+      --text:#e8eaf0;--text2:#8892a4;--text3:#4a5568;
+      --green:#4ade80;--red:#f87171;--blue:#60a5fa;--yellow:#fbbf24;
+      --sidebar-w:220px;--font:'Noto Sans SC',sans-serif;--mono:'JetBrains Mono',monospace;
+    }
+    body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.6;}
+
+    /* LOGIN */
+    #login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse 60% 60% at 50% 30%,rgba(232,213,160,0.06),transparent 70%);}
+    .login-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px;width:360px;box-shadow:0 8px 48px rgba(0,0,0,.5);}
+    .login-logo{font-size:22px;font-weight:700;color:var(--accent);margin-bottom:4px;}
+    .login-sub{color:var(--text3);font-size:13px;margin-bottom:28px;}
+    .field{margin-bottom:16px;}
+    .field label{display:block;font-size:12px;color:var(--text2);margin-bottom:7px;text-transform:uppercase;letter-spacing:.05em;}
+    .field input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;transition:border-color .2s;}
+    .field input:focus{border-color:rgba(232,213,160,.4);}
+    .login-btn{width:100%;background:linear-gradient(135deg,var(--accent2),var(--accent));border:none;color:#1a0f00;font-family:var(--font);font-weight:600;font-size:15px;padding:12px;border-radius:8px;cursor:pointer;margin-top:8px;}
+    .login-btn:hover{opacity:.9;}
+    .login-err{color:var(--red);font-size:13px;margin-top:10px;display:none;}
+
+    /* LAYOUT */
+    #admin-app{display:none;min-height:100vh;}
+    .layout{display:flex;min-height:100vh;}
+    .sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:10;}
+    .sb-logo{padding:20px 18px;border-bottom:1px solid var(--border);}
+    .sb-logo-title{font-size:16px;font-weight:700;color:var(--accent);}
+    .sb-logo-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+    .sb-nav{flex:1;padding:10px 0;overflow-y:auto;}
+    .nav-group{padding:0 10px;margin-bottom:4px;}
+    .nav-group-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);padding:8px 8px 4px;}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:var(--text2);cursor:pointer;transition:all .15s;font-size:14px;margin-bottom:1px;user-select:none;}
+    .nav-item:hover{background:var(--surface2);color:var(--text);}
+    .nav-item.active{background:rgba(232,213,160,.1);color:var(--accent);}
+    .nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
+    .sb-footer{padding:14px 18px;border-top:1px solid var(--border);}
+    .logout-btn{display:flex;align-items:center;gap:8px;color:var(--text3);cursor:pointer;font-size:13px;padding:8px;border-radius:6px;transition:color .2s;}
+    .logout-btn:hover{color:var(--red);}
+
+    /* MAIN */
+    .main{margin-left:var(--sidebar-w);flex:1;padding:28px;min-height:100vh;}
+    .page-title{font-size:20px;font-weight:600;margin-bottom:24px;}
+    .panel{display:none;}
+    .panel.active{display:block;}
+
+    /* STATS */
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:22px;}
+    .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;}
+    .stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+    .stat-num{font-size:28px;font-weight:700;color:var(--accent);font-family:var(--mono);}
+    .stat-sub{font-size:11px;color:var(--text3);margin-top:4px;}
+    .trend-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:22px;}
+    .trend-card h3{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:14px;}
+    .trend-chart{display:flex;align-items:flex-end;gap:8px;height:72px;}
+    .trend-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+    .trend-bar{width:100%;background:rgba(232,213,160,.25);border-radius:3px 3px 0 0;transition:height .6s ease;min-height:3px;}
+    .trend-bar:hover{background:rgba(232,213,160,.5);}
+    .trend-lbl{font-size:10px;color:var(--text3);font-family:var(--mono);}
+    .trend-val{font-size:11px;color:var(--accent);font-family:var(--mono);}
+
+    /* TABLE */
+    .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px;}
+    .table-toolbar{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+    .toolbar-title{font-size:15px;font-weight:600;flex:1;min-width:0;}
+    .search-input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;width:180px;}
+    .search-input:focus{border-color:var(--border2);}
+    table{width:100%;border-collapse:collapse;}
+    th{padding:10px 16px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);border-bottom:1px solid var(--border);font-weight:500;}
+    td{padding:11px 16px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
+    tr:last-child td{border-bottom:none;}
+    tr:hover td{background:rgba(255,255,255,.015);}
+    .key-mono{font-family:var(--mono);font-size:13px;letter-spacing:.05em;color:var(--accent);}
+    .time-cell,.ip-cell{font-family:var(--mono);font-size:12px;color:var(--text3);}
+
+    /* BADGES */
+    .badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:4px;font-size:11px;font-family:var(--mono);}
+    .badge-green{background:rgba(74,222,128,.1);color:var(--green);border:1px solid rgba(74,222,128,.2);}
+    .badge-red{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.2);}
+
+    /* BUTTONS */
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;font-size:13px;font-family:var(--font);transition:all .15s;line-height:1;}
+    .btn:hover{border-color:var(--border2);color:var(--text);}
+    .btn:disabled{opacity:.5;cursor:not-allowed;}
+    .btn-primary{background:rgba(232,213,160,.1);border-color:rgba(232,213,160,.3);color:var(--accent);}
+    .btn-primary:hover{background:rgba(232,213,160,.18);}
+    .btn-danger{color:var(--red);}
+    .btn-danger:hover{border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.08);}
+    .btn-sm{padding:5px 10px;font-size:12px;}
+    .btn-blue{background:rgba(96,165,250,.1);border-color:rgba(96,165,250,.3);color:var(--blue);}
+    .btn-blue:hover{background:rgba(96,165,250,.18);}
+
+    /* MODAL */
+    .modal-overlay{display:none;position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;}
+    .modal-overlay.open{display:flex;}
+    .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:440px;max-width:95vw;}
+    .modal-title{font-size:17px;font-weight:600;margin-bottom:20px;}
+    .modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;}
+
+    /* FORM */
+    .form-row{margin-bottom:14px;}
+    .form-row label{display:block;font-size:12px;color:var(--text2);margin-bottom:6px;}
+    .form-row input,.form-row select,.form-row textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;transition:border-color .2s;}
+    .form-row input:focus,.form-row select:focus,.form-row textarea:focus{border-color:rgba(232,213,160,.4);}
+    .form-row textarea{resize:vertical;min-height:80px;}
+    select option{background:var(--surface);}
+
+    /* CONFIG CARDS */
+    .config-block{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:14px;}
+    .config-block-title{font-size:15px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+    .config-block-desc{font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.7;}
+    .toggle-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+    .toggle{position:relative;width:44px;height:24px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;cursor:pointer;transition:all .2s;flex-shrink:0;}
+    .toggle.on{background:rgba(74,222,128,.25);border-color:rgba(74,222,128,.4);}
+    .toggle::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;background:var(--text3);border-radius:50%;transition:all .2s;}
+    .toggle.on::after{left:23px;background:var(--green);}
+
+    /* API KEY STATUS */
+    .api-status-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;margin-bottom:14px;}
+    .api-dot{width:9px;height:9px;border-radius:50%;background:var(--text3);flex-shrink:0;}
+    .api-dot.ok{background:var(--green);}
+    .api-dot.err{background:var(--red);}
+
+    /* NOTICE PREVIEW */
+    .notice-preview{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.2);border-radius:7px;padding:10px 14px;font-size:13px;color:#fbbf24;margin-top:8px;display:none;}
+
+    /* GENERATED KEYS */
+    .generated-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:var(--mono);font-size:12px;color:var(--accent);max-height:200px;overflow-y:auto;line-height:2;display:none;margin-top:12px;}
+
+    /* TOAST */
+    .toast{position:fixed;bottom:24px;right:24px;z-index:999;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 18px;border-radius:8px;font-size:13px;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;max-width:320px;}
+    .toast.show{opacity:1;transform:none;}
+
+    @media(max-width:768px){
+      .sidebar{width:56px;}
+      .sb-logo-title,.sb-logo-sub,.nav-group-label,.nav-item span:not(.nav-icon),.sb-footer span{display:none;}
+      .main{margin-left:56px;padding:16px;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">✦ PaperPure</div>
+    <div class="login-sub">管理员登录</div>
+    <div class="field"><label>用户名</label><input type="text" id="login-user" placeholder="admin" /></div>
+    <div class="field"><label>密码</label><input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" /></div>
+    <button class="login-btn" onclick="doLogin()">登录管理后台</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="admin-app">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sb-logo">
+        <div class="sb-logo-title">✦ PaperPure</div>
+        <div class="sb-logo-sub">管理后台</div>
+      </div>
+      <nav class="sb-nav">
+        <div class="nav-group">
+          <div class="nav-group-label">概览</div>
+          <div class="nav-item active" onclick="go('stats',this)"><span class="nav-icon">📊</span><span>数据统计</span></div>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-label">卡密</div>
+          <div class="nav-item" onclick="go('cards',this)"><span class="nav-icon">🔑</span><span>卡密管理</span></div>
+          <div class="nav-item" onclick="go('batch',this)"><span class="nav-icon">⚡</span><span>批量生成</span></div>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-label">记录</div>
+          <div class="nav-item" onclick="go('logs',this)"><span class="nav-icon">📋</span><span>使用记录</span></div>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-label">系统</div>
+          <div class="nav-item" onclick="go('config',this)"><span class="nav-icon">⚙️</span><span>网站配置</span></div>
+          <div class="nav-item" onclick="go('account',this)"><span class="nav-icon">🔐</span><span>账号安全</span></div>
+        </div>
+      </nav>
+      <div class="sb-footer">
+        <div class="logout-btn" onclick="doLogout()"><span>←</span><span>退出</span></div>
+      </div>
+    </aside>
+
+    <main class="main">
+
+      <!-- 统计 -->
+      <div class="panel active" id="panel-stats">
+        <div class="page-title">数据统计</div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-label">今日使用</div><div class="stat-num" id="s-today">—</div><div class="stat-sub">自然日内</div></div>
+          <div class="stat-card"><div class="stat-label">总调用次数</div><div class="stat-num" id="s-total">—</div><div class="stat-sub">建站以来</div></div>
+          <div class="stat-card"><div class="stat-label">卡密总数</div><div class="stat-num" id="s-cards">—</div></div>
+          <div class="stat-card"><div class="stat-label">有效卡密</div><div class="stat-num" id="s-active">—</div><div class="stat-sub">次数 &gt; 0</div></div>
+        </div>
+        <div class="trend-card">
+          <h3>📈 近7日趋势</h3>
+          <div class="trend-chart" id="trend-chart"></div>
+        </div>
+        <div class="table-wrap">
+          <div class="table-toolbar"><span class="toolbar-title">最近使用</span><button class="btn" onclick="loadStats()">🔄 刷新</button></div>
+          <table><thead><tr><th>时间</th><th>卡密/类型</th><th>字数</th><th>IP</th></tr></thead>
+          <tbody id="recent-tbody"></tbody></table>
+        </div>
+      </div>
+
+      <!-- 卡密管理 -->
+      <div class="panel" id="panel-cards">
+        <div class="page-title">卡密管理</div>
+        <div class="table-wrap">
+          <div class="table-toolbar">
+            <span class="toolbar-title">所有卡密</span>
+            <input class="search-input" id="card-search" placeholder="🔍 搜索卡密…" oninput="filterCards()" />
+            <button class="btn" onclick="loadCards()">🔄 刷新</button>
+            <button class="btn btn-primary" onclick="openAdd()">+ 新增</button>
+            <button class="btn" onclick="exportCards()">📤 导出CSV</button>
+          </div>
+          <table><thead><tr><th>卡密</th><th>剩余次数</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead>
+          <tbody id="cards-tbody"></tbody></table>
+        </div>
+      </div>
+
+      <!-- 批量生成 -->
+      <div class="panel" id="panel-batch">
+        <div class="page-title">批量生成卡密</div>
+        <div class="config-block" style="max-width:480px">
+          <div class="form-row"><label>生成数量（最多500）</label><input type="number" id="gen-count" value="10" min="1" max="500"/></div>
+          <div class="form-row"><label>每张次数</label><input type="number" id="gen-times" value="10" min="1" max="9999"/></div>
+          <div class="form-row"><label>卡密前缀（可选）</label><input type="text" id="gen-prefix" placeholder="例如：VIP" maxlength="10" oninput="this.value=this.value.toUpperCase()"/></div>
+          <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px" onclick="batchGen()">⚡ 立即生成</button>
+          <div class="generated-box" id="gen-box"></div>
+          <div id="gen-copy-row" style="margin-top:10px;display:none">
+            <button class="btn" onclick="copyKeys()">📋 复制所有卡密</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 使用记录 -->
+      <div class="panel" id="panel-logs">
+        <div class="page-title">使用记录</div>
+        <div class="table-wrap">
+          <div class="table-toolbar"><span class="toolbar-title">所有记录</span><button class="btn" onclick="loadLogs()">🔄 刷新</button></div>
+          <table><thead><tr><th>时间</th><th>卡密/类型</th><th>字数</th><th>IP</th></tr></thead>
+          <tbody id="logs-tbody"></tbody></table>
+        </div>
+      </div>
+
+      <!-- 网站配置 -->
+      <div class="panel" id="panel-config">
+        <div class="page-title">网站配置</div>
+
+        <!-- Kimi API Key -->
+        <div class="config-block">
+          <div class="config-block-title">🔑 Kimi API Key</div>
+          <div class="api-status-row">
+            <div class="api-dot" id="api-dot"></div>
+            <span id="api-status-text" style="font-size:13px;color:var(--text2)">检测中…</span>
+            <button onclick="checkApiKey()" style="margin-left:auto;background:none;border:1px solid var(--border);color:var(--text3);padding:3px 10px;border-radius:5px;cursor:pointer;font-size:12px;font-family:var(--font)">🔄 重新检测</button>
+          </div>
+          <div class="config-block-desc">直接在此处输入保存即可，数据存储在 Supabase 数据库，永久有效不会丢失。</div>
+          <div style="display:flex;gap:8px">
+            <input type="password" id="api-key-input" class="form-row" style="flex:1;margin:0;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off"/>
+            <button class="btn btn-primary" onclick="saveApiKey()" id="api-save-btn">保存</button>
+          </div>
+        </div>
+
+        <!-- 免费试用 -->
+        <div class="config-block">
+          <div class="config-block-title">🎁 免费试用</div>
+          <div class="toggle-row">
+            <span>开启免费试用</span>
+            <div class="toggle on" id="toggle-free" onclick="toggleFree()"></div>
+          </div>
+          <div class="form-row">
+            <label>每个IP免费次数</label>
+            <div style="display:flex;gap:8px">
+              <input type="number" id="free-limit-input" value="1" min="0" max="99" style="width:120px"/>
+              <button class="btn btn-primary" onclick="saveFreeLimit()">保存</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 公告 -->
+        <div class="config-block">
+          <div class="config-block-title">📢 网站公告</div>
+          <div class="form-row">
+            <label>公告内容（留空不显示）</label>
+            <textarea id="notice-input" placeholder="例如：系统维护中，限时活动…" oninput="previewNotice()"></textarea>
+          </div>
+          <div class="notice-preview" id="notice-preview"></div>
+          <button class="btn btn-primary" onclick="saveNotice()">保存公告</button>
+        </div>
+      </div>
+
+      <!-- 账号安全 -->
+      <div class="panel" id="panel-account">
+        <div class="page-title">账号安全</div>
+        <div class="config-block" style="max-width:480px">
+          <div class="config-block-title">🔐 修改管理员密码</div>
+          <div class="form-row"><label>当前用户名</label><input type="text" id="acct-user" readonly style="opacity:.5"/></div>
+          <div class="form-row"><label>新密码（至少6位）</label><input type="password" id="new-pass"/></div>
+          <div class="form-row"><label>确认新密码</label><input type="password" id="new-pass2"/></div>
+          <button class="btn btn-primary" onclick="changePass()">修改密码</button>
+          <p style="font-size:12px;color:var(--text3);margin-top:12px">修改后需重新登录。</p>
+        </div>
+        <div class="config-block" style="max-width:480px;margin-top:0">
+          <div class="config-block-title">🛡 Supabase 说明</div>
+          <p style="font-size:13px;color:var(--text2);line-height:1.9">
+            • 所有数据（卡密、配置、API Key、日志）均存储在 Supabase 数据库<br>
+            • Netlify 函数冷启动不影响数据，永久持久化<br>
+            • 需在 Netlify 环境变量中配置 <code style="font-family:var(--mono);font-size:12px;color:var(--accent)">SUPABASE_URL</code> 和 <code style="font-family:var(--mono);font-size:12px;color:var(--accent)">SUPABASE_SERVICE_KEY</code>
+          </p>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- MODAL 新增卡密 -->
+<div class="modal-overlay" id="modal-add">
+  <div class="modal">
+    <div class="modal-title">新增卡密</div>
+    <div class="form-row"><label>卡密（留空自动生成）</label><input type="text" id="add-key" placeholder="CUSTOM123" oninput="this.value=this.value.toUpperCase()"/></div>
+    <div class="form-row"><label>次数</label><input type="number" id="add-times" value="10" min="1"/></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-add')">取消</button>
+      <button class="btn btn-primary" onclick="addCard()">确认添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 编辑卡密 -->
+<div class="modal-overlay" id="modal-edit">
+  <div class="modal">
+    <div class="modal-title">编辑卡密</div>
+    <input type="hidden" id="edit-key-hidden"/>
+    <div class="form-row"><label>卡密</label><input type="text" id="edit-key-display" readonly style="opacity:.5"/></div>
+    <div class="form-row"><label>剩余次数</label><input type="number" id="edit-times" min="0"/></div>
+    <div class="form-row"><label>状态</label>
+      <select id="edit-status"><option value="active">启用</option><option value="disabled">禁用</option></select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-edit')">取消</button>
+      <button class="btn btn-primary" onclick="saveEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="admin.js"></script>
+</body>
+</html>
